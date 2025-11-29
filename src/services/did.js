@@ -1,8 +1,22 @@
 import axios from 'axios'
 
 // Call D-ID API directly from the browser (note: this exposes the key to clients).
-// The key is read from Vite env: VITE_DID_API_KEY or VITE_API_AUTHORIZATION as fallback.
-const DID_API_BASE = '/d-id'
+// Dev-time proxy path is `/d-id` (only available during `npm run dev`).
+// For production builds, set `VITE_DID_API_URL` to the real D-ID API base (e.g. https://api.d-id.com)
+// or set `VITE_DID_PROXY` to a server-side proxy endpoint you control.
+const DID_API_BASE = (function () {
+  // during development we rely on the Vite dev proxy (local `/d-id` path)
+  try {
+    const mode = import.meta.env.MODE
+    if (mode === 'development') return '/d-id'
+  } catch (e) {
+    // ignore
+  }
+  // production: prefer explicit env var, fallback to public D-ID API
+  const prodBase = import.meta.env.VITE_DID_API_URL || import.meta.env.VITE_DID_PROXY || 'https://api.d-id.com'
+  // ensure no trailing slash
+  return prodBase.replace(/\/$/, '')
+})()
 
 function getAuthHeader() {
   const key = import.meta.env.VITE_DID_API_KEY || import.meta.env.VITE_API_AUTHORIZATION || ''
