@@ -1,0 +1,127 @@
+.app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+}
+
+.toggle-sidebar {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 1000;
+}
+
+.toggle-sidebar:hover {
+  background: #0056b3;
+}
+
+.back-to-selection {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 1000;
+}
+
+.back-to-selection:hover {
+  background: #5a6268;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 60px;
+}
+
+.selected-character {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* keep the selected character visible while the chat scrolls */
+  position: sticky;
+  top: 80px;
+  z-index: 50;
+}
+
+.selected-character h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.avatar-video-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.selected-character img {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #007bff;
+  transition: opacity 0.3s ease;
+}
+
+.selected-character img.avatar-hidden {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.talking-face-video {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #28a745;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.selected-specialty {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background: #e3f2fd;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  color: #1976d2;
+  display: inline-block;
+}
+
+.controls {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

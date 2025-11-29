@@ -1,0 +1,77 @@
+.chat-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.chat-input-container input[type="text"] {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.chat-input-container input[type="text"]:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.chat-input-container button {
+  padding: 10px 14px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.chat-input-container button:first-of-type {
+  background-color: #007bff;
+}
+
+.chat-input-container button:first-of-type:hover {
+  background-color: #0056b3;
+}
+
+.chat-input-container button:last-of-type {
+  background-color: #28a745;
+}
+
+.chat-input-container button:last-of-type:hover {
+  background-color: #1e7e34;
+}
+
+.chat-options {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 15px;
+}
+
+.chat-options label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.chat-options input[type="checkbox"] {
+  margin-right: 0.4rem;
+  cursor: pointer;
+}
+
+.download-btn {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.download-btn:hover {
+  background-color: #e0e0e0;
+}
