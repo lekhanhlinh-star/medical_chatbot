@@ -27,7 +27,7 @@ export const sendMessage = async (question, role, gender, modelType, responseWit
   formData.append('role', role)
   formData.append('gender', gender)
   formData.append('model_type', modelType)
-  formData.append('responseWithAudio', responseWithAudio)
+  formData.append('responseWithAudio', "false" ) // always false for now
 
   // Use relative URL to leverage Vite proxy
   const response = await api.post('/ask', formData, {

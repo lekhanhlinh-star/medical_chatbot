@@ -27,6 +27,7 @@ function ChatPage({ onReset }) {
   const [currentQuestion, setCurrentQuestion] = useState('這個疾病的症狀有哪些？')
   const [responseWithAudio, setResponseWithAudio] = useState(false)
   const [videoUrl, setVideoUrl] = useState(null)
+  const [videoMuted, setVideoMuted] = useState(true)
   // keep track of currently playing audio so we can stop it when needed
   const audioRef = useRef(null)
   const audioURLRef = useRef(null)
@@ -108,7 +109,7 @@ function ChatPage({ onReset }) {
               // create payload for D-ID
 
               try {
-                // setIsLoading(true)
+                setIsLoading(true)
 
                 // Only generate video if the UI checkbox/state `responseWithAudio` is enabled
                 const respWithAudioFlag = !!responseWithAudio
@@ -140,6 +141,8 @@ function ChatPage({ onReset }) {
                       const elapsed = (Date.now() - start_time) / 1000
                       console.log(`✅ D-ID TTS+Video: ${elapsed.toFixed(2)}s`)
                       await setVideoFromUrlCandidate(video_url)
+                    setIsLoading(false)
+
                     } else {
                       console.warn('⚠️ Video generation failed:', statusMsg)
                       throw new Error(`D-ID video generation failed: ${statusMsg}`)
@@ -185,15 +188,42 @@ function ChatPage({ onReset }) {
       if (v.src !== videoUrl) {
         v.src = videoUrl
       }
-      // attempt to play; browsers may block autoplay with sound
-      const p = v.play()
-      if (p && typeof p.then === 'function') {
-        p.catch(err => {
-          // Autoplay may be blocked; user can press play
+
+      // Attempt unmuted autoplay when allowed; otherwise fall back to muted autoplay.
+      const allowUnmuted = localStorage.getItem('allowAudioAutoplay') === 'true'
+      const tryPlay = async () => {
+        try {
+          if (allowUnmuted) {
+            v.muted = false
+            setVideoMuted(false)
+          } else {
+            // try unmuted once; if blocked we'll mute below
+            v.muted = false
+          }
+
+          const p = v.play()
+          if (p && typeof p.then === 'function') {
+            await p
+          }
+          // play succeeded unmuted
+          setVideoMuted(false)
+        } catch (err) {
+          // Autoplay blocked with sound — mute and play silently
           // eslint-disable-next-line no-console
-          console.warn('Video autoplay blocked or failed:', err)
-        })
+          console.warn('Unmuted autoplay blocked; falling back to muted autoplay', err)
+          try {
+            v.muted = true
+            setVideoMuted(true)
+            const p2 = v.play()
+            if (p2 && typeof p2.then === 'function') p2.catch(() => {})
+          } catch (e) {
+            // ignore
+          }
+        }
       }
+
+      // start attempt
+      tryPlay()
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Error setting videoRef src/play:', err)
@@ -273,7 +303,7 @@ function ChatPage({ onReset }) {
         const sourceUrl = selectedImg.startsWith('http') ? selectedImg : `${window.location.origin}${selectedImg}`
 
         try {
-          setIsLoading(true)
+          // setIsLoading(true)
           // Create talk and wait for video
           const genderLocal = localStorage.getItem('selectedGender') || selectedGender || 'male'
           let d_id_voice_id = 'zh-TW-HsiaoChenNeural'
@@ -287,25 +317,46 @@ function ChatPage({ onReset }) {
             if (video_url) {
               // Set video and append bot message together so they appear at same time
               await setVideoFromUrlCandidate(video_url)
-              setMessages(prev => [...prev, { role: 'bot', text: cleanedAnswer }])
+              setMessages(prev => {
+                const next = [...prev, { role: 'bot', text: cleanedAnswer }]
+                // mark this bot message as already processed to avoid duplicate D-ID calls
+                try { lastBotProcessedRef.current = next.length - 1 } catch (e) {}
+                return next
+              })
             } else {
               // fallback: append message without video
               console.warn('D-ID video generation failed:', statusMsg)
-              setMessages(prev => [...prev, { role: 'bot', text: cleanedAnswer }])
+              setMessages(prev => {
+                const next = [...prev, { role: 'bot', text: cleanedAnswer }]
+                try { lastBotProcessedRef.current = next.length - 1 } catch (e) {}
+                return next
+              })
             }
-          } else {
-            console.warn('Failed to create D-ID talk; appending message without video')
-            setMessages(prev => [...prev, { role: 'bot', text: cleanedAnswer }])
-          }
+            } else {
+              console.warn('Failed to create D-ID talk; appending message without video')
+              setMessages(prev => {
+                const next = [...prev, { role: 'bot', text: cleanedAnswer }]
+                try { lastBotProcessedRef.current = next.length - 1 } catch (e) {}
+                return next
+              })
+            }
         } catch (e) {
           console.error('Error generating video, appending bot message without video:', e)
-          setMessages(prev => [...prev, { role: 'bot', text: cleanedAnswer }])
+          setMessages(prev => {
+            const next = [...prev, { role: 'bot', text: cleanedAnswer }]
+            try { lastBotProcessedRef.current = next.length - 1 } catch (err) {}
+            return next
+          })
         } finally {
-          setIsLoading(false)
+          // setIsLoading(false)
         }
       } else {
         // No video desired — append bot message immediately
-        setMessages(prev => [...prev, { role: 'bot', text: cleanedAnswer }])
+        setMessages(prev => {
+          const next = [...prev, { role: 'bot', text: cleanedAnswer }]
+          try { lastBotProcessedRef.current = next.length - 1 } catch (e) {}
+          return next
+        })
         // Play audio if provided
         if (result.video_url) {
           setVideoUrl(result.video_url)
@@ -581,29 +632,55 @@ function ChatPage({ onReset }) {
               className={videoUrl ? 'avatar-hidden' : ''}
             />
             {videoUrl && (
-              <video
-                ref={videoRef}
-                className="talking-face-video"
-                src={videoUrl}
-                autoPlay
-                muted={true}
-                playsInline
-                onClick={() => {
-                  // allow user to unmute on interaction
-                  try {
-                    if (videoRef.current) {
-                      if (videoRef.current.muted) {
-                        videoRef.current.muted = false
-                        videoRef.current.play().catch(() => {})
-                      } else {
-                        videoRef.current.muted = true
+              <>
+                <video
+                  ref={videoRef}
+                  className="talking-face-video"
+                  src={videoUrl}
+                  autoPlay
+                  muted={videoMuted}
+                  playsInline
+                  onClick={() => {
+                    // allow user to toggle mute on interaction
+                    try {
+                      if (videoRef.current) {
+                        if (videoRef.current.muted) {
+                          videoRef.current.muted = false
+                          setVideoMuted(false)
+                          videoRef.current.play().catch(() => {})
+                        } else {
+                          videoRef.current.muted = true
+                          setVideoMuted(true)
+                        }
                       }
-                    }
-                  } catch (e) {}
-                }}
-                onEnded={() => setVideoUrl(null)}
-                title="Click to unmute"
-              />
+                    } catch (e) {}
+                  }}
+                  onEnded={() => setVideoUrl(null)}
+                  title="Click to toggle mute"
+                />
+
+                {/* Visible overlay prompting user to unmute if autoplay with sound was blocked */}
+                {videoMuted && (
+                  <div
+                    className="unmute-overlay"
+                    onClick={() => {
+                      try {
+                        if (videoRef.current) {
+                          videoRef.current.muted = false
+                          setVideoMuted(false)
+                          // remember user's gesture to allow future unmuted autoplay
+                          localStorage.setItem('allowAudioAutoplay', 'true')
+                          videoRef.current.play().catch(() => {})
+                        }
+                      } catch (e) {}
+                    }}
+                    role="button"
+                    aria-label="Unmute video"
+                  >
+                    🔊 點擊解除靜音
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div className="selected-specialty">

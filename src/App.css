@@ -109,6 +109,22 @@
   z-index: 2;
 }
 
+/* Overlay shown when autoplay with sound is blocked; sits above the video */
+.unmute-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  color: #fff;
+  font-weight: 600;
+  background: rgba(0,0,0,0.35);
+  border-radius: 50%;
+  cursor: pointer;
+  user-select: none;
+}
+
 .selected-specialty {
   margin-top: 10px;
   padding: 5px 10px;

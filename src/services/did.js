@@ -83,9 +83,25 @@ async function getTalkStatus(talkId) {
 
 // Create a talk from text only (return talk id if created)
 async function createTalkWithText(text, imageUrl, providerType = 'microsoft', voiceId = null, options = {}) {
+  // Ensure we use the exact image provided. If `imageUrl` is a File/Blob, upload it
+  // to D-ID images endpoint and use the returned URL. If it's a string, use it
+  // unchanged (could be an absolute URL or a local /static path).
+  let sourceUrl = imageUrl
+  if (imageUrl && typeof imageUrl !== 'string') {
+    try {
+      const uploaded = await uploadImage(imageUrl)
+      if (uploaded) sourceUrl = uploaded
+    } catch (e) {
+      // If upload fails, fall back to the original value (may cause server error).
+      // Log a warning so developers can diagnose upload issues.
+      // eslint-disable-next-line no-console
+      console.warn('createTalkWithText: uploadImage failed, falling back to original image value', e)
+    }
+  }
+
   const payload = {
     script: { type: 'text', input: text, provider: providerType ? { type: providerType, voice_id: voiceId } : undefined },
-    source_url: imageUrl,
+    source_url: sourceUrl,
     config: {
       fluent: options.fluent ?? true,
       pad_audio: options.pad_audio ?? 0.0,
